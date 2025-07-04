@@ -1,0 +1,4 @@
+conveyor_udp_parameters:
+  ros__parameters:
+    udp_ip: "10.1.100.222"        # IP address of the Arduino Nano
+    udp_port: 30001               # Port number of the Arduino Nano device
