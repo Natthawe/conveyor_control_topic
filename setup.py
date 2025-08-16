@@ -26,6 +26,8 @@ setup(
     entry_points={
         'console_scripts': [
             'conveyor_udp_node = conveyor_control_topic.conveyor_udp_node:main',
+            'led_hook_udp_node = conveyor_control_topic.led_hook_udp_node:main',
+            'led_relay_udp_node = conveyor_control_topic.led_relay_udp_node:main',
         ],
     },
 )

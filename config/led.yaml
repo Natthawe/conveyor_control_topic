@@ -1,0 +1,4 @@
+led_relay_udp_node:
+  ros__parameters:
+    udp_ip: "10.1.100.211"        # IP address of the Arduino Nano
+    udp_port: 8001               # Port number of the Arduino Nano device
