@@ -1,8 +1,3 @@
-// -1  - YELLOW 
-// 0   - GREEN
-// 1   - RED
-// 2   - BLACK
-
 #include <SPI.h>
 #include <Ethernet.h>
 #include <EthernetUdp.h>
@@ -23,27 +18,27 @@ void relayWrite(int pin, bool on) {
   else digitalWrite(pin, on ? HIGH : LOW);
 }
 
-void applyCommand(int8_t cmd) {
+void applyCommand(int32_t cmd) {
   switch (cmd) {
-    case 1:  // แดง -> เปิดรีเลย์ 1, ปิดรีเลย์ 2
+    case 1:  // RED -> open Relay1, close Relay2
       relayWrite(RELAY1_PIN, true);
       relayWrite(RELAY2_PIN, false);
-      Serial.println(F("CMD -1: Relay1=ON, Relay2=OFF -> RED"));
+      Serial.println(F("CMD 1: Relay1=ON, Relay2=OFF -> RED"));
       break;
-    case -1:  // เหลือง -> เปิดทั้งคู่
+    case -1:  // YELLOW -> open both relays
       relayWrite(RELAY1_PIN, false);
       relayWrite(RELAY2_PIN, false);
-      Serial.println(F("CMD 0: Relay1=ON, Relay2=ON -> YELLOW"));
+      Serial.println(F("CMD -1: Relay1=ON, Relay2=ON -> YELLOW"));
       break;
-    case 0:  // เขียว -> ปิดรีเลย์ 1, เปิดรีเลย์ 2
+    case 0:  // GREEN -> close Relay1, open Relay2
       relayWrite(RELAY1_PIN, false);
       relayWrite(RELAY2_PIN, true);
-      Serial.println(F("CMD 1: Relay1=OFF, Relay2=ON -> GREEN"));
+      Serial.println(F("CMD 0: Relay1=OFF, Relay2=ON -> GREEN"));
       break;
-    case 2:  // ปิด LED -> ปิดรีเลย์ทั้งคู่
+    case 2:  // BLACK (OFF) -> close both relays
       relayWrite(RELAY1_PIN, true);
       relayWrite(RELAY2_PIN, true);
-      Serial.println(F("CMD 1: Relay1=OFF, Relay2=OFF -> BLACK"));
+      Serial.println(F("CMD 2: Relay1=OFF, Relay2=OFF -> BLACK"));
       break;      
     default:
       Serial.print(F("Unknown CMD: "));
@@ -51,19 +46,19 @@ void applyCommand(int8_t cmd) {
   }
 }
 
-int8_t parseCmdFromPacket(int packetSize) {
-  uint8_t buf[16];
+int32_t parseCmdFromPacket(int packetSize) {
+  uint8_t buf[32];
   int len = Udp.read(buf, min(packetSize, (int)sizeof(buf) - 1));
-  if (len <= 0) return 2; // invalid
+  if (len <= 0) return 9999; // invalid marker
 
-  // กรณี 1: ไบต์เดียวแบบ binary int8 (-1/0/1/2)
-  if (len == 1 && (buf[0] == 0xFF || buf[0] == 0x00 || buf[0] == 0x01)) {
-    if (buf[0] == 0xFF) return -1;
-    if (buf[0] == 0x00) return 0;
-    return 1; // 0x01
+  // ---- กรณี 1: Binary int32 (4 bytes, little endian) ----
+  if (len == 4) {
+    int32_t val;
+    memcpy(&val, buf, 4);
+    return val;
   }
 
-  // กรณี 2: ข้อความ ASCII เช่น "-1", "0", "1", "2"
+  // ---- กรณี 2: ASCII ข้อความ ----
   buf[len] = 0;
   char *s = (char*)buf;
 
@@ -73,33 +68,20 @@ int8_t parseCmdFromPacket(int packetSize) {
     s[--len] = 0;
   }
 
-  if (!strcmp(s, "-1")) return -1;
-  if (!strcmp(s, "0"))  return 0;
-  if (!strcmp(s, "1"))  return 1;
-  if (!strcmp(s, "2"))  return 2;
-
-  // atoi เผื่อมีเว้นวรรค
   int v = atoi(s);
-  if (v == -1 || v == 0 || v == 1 || v == 2) return (int8_t)v;
-
-  // debug: แสดงค่าไบต์ดิบ
-  Serial.print(F("UDP raw bytes: "));
-  for (int i = 0; i < len; i++) { Serial.print((int)buf[i]); Serial.print(' '); }
-  Serial.println();
-  return 2; // invalid
+  return v;
 }
-
 
 void setup() {
   Serial.begin(115200);
   while (!Serial) {}
-  Serial.println(F("\n=== Nano UDP Relay Controller ==="));
-  Serial.println(F(" -> -1 = YELLOW\n ->  0 = GREEN\n ->  1 = RED\n ->  2 = BLACK"));
+  Serial.println(F("\n=== Nano UDP Relay Controller (Int32) ==="));
+  Serial.println(F(" -> -1 = YELLOW\n -> 0 = GREEN\n -> 1 = RED\n -> 2 = BLACK"));
 
   pinMode(RELAY1_PIN, OUTPUT);
   pinMode(RELAY2_PIN, OUTPUT);
-  relayWrite(RELAY1_PIN, false);
-  relayWrite(RELAY2_PIN, false);
+  relayWrite(RELAY1_PIN, true);
+  relayWrite(RELAY2_PIN, true);
 
   Ethernet.init(10);  // CS pin D10
   Ethernet.begin(MAC, LOCAL_IP);
@@ -116,31 +98,19 @@ void setup() {
 }
 
 void loop() {
-  // ===== UDP receive (1-byte signed int: -1/0/1) =====
-  //   int packetSize = Udp.parsePacket();
-  //   if (packetSize > 0) {
-  //     int8_t cmd = 2; // invalid init
-  //     if (packetSize >= 1) {
-  //       uint8_t b;
-  //       Udp.read(&b, 1);
-  //       while (Udp.available()) Udp.read();
-  //       cmd = (int8_t)b;
-  //     }
-  //     applyCommand(cmd);
-  //   }
-
   int packetSize = Udp.parsePacket();
   if (packetSize > 0) {
-    int8_t cmd = parseCmdFromPacket(packetSize);
+    int32_t cmd = parseCmdFromPacket(packetSize);
     applyCommand(cmd);
   }
-  // ===== Serial test: พิมพ์ -1 / 0 / 1 / 2แล้ว Enter =====
+
+  // Serial test
   if (Serial.available()) {
     String s = Serial.readStringUntil('\n');
     s.trim();
     if (s.length()) {
-      int val = s.toInt();  // รองรับ -1, 0, 1, 2
-      applyCommand((int8_t)val);
+      int val = s.toInt();
+      applyCommand((int32_t)val);
     }
   }
 }
