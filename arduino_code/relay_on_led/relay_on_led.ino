@@ -21,8 +21,8 @@ void relayWrite(int pin, bool on) {
 void applyCommand(int32_t cmd) {
   switch (cmd) {
     case 1:  // RED -> open Relay1, close Relay2
-      relayWrite(RELAY1_PIN, true);
-      relayWrite(RELAY2_PIN, false);
+      relayWrite(RELAY1_PIN, false);
+      relayWrite(RELAY2_PIN, true);
       Serial.println(F("CMD 1: Relay1=ON, Relay2=OFF -> RED"));
       break;
     case -1:  // YELLOW -> open both relays
@@ -31,8 +31,8 @@ void applyCommand(int32_t cmd) {
       Serial.println(F("CMD -1: Relay1=ON, Relay2=ON -> YELLOW"));
       break;
     case 0:  // GREEN -> close Relay1, open Relay2
-      relayWrite(RELAY1_PIN, false);
-      relayWrite(RELAY2_PIN, true);
+      relayWrite(RELAY1_PIN, true);
+      relayWrite(RELAY2_PIN, false);      
       Serial.println(F("CMD 0: Relay1=OFF, Relay2=ON -> GREEN"));
       break;
     case 2:  // BLACK (OFF) -> close both relays
@@ -81,7 +81,7 @@ void setup() {
   pinMode(RELAY1_PIN, OUTPUT);
   pinMode(RELAY2_PIN, OUTPUT);
   relayWrite(RELAY1_PIN, true);
-  relayWrite(RELAY2_PIN, true);
+  relayWrite(RELAY2_PIN, false);  
 
   Ethernet.init(10);  // CS pin D10
   Ethernet.begin(MAC, LOCAL_IP);
