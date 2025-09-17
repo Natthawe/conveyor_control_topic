@@ -62,7 +62,7 @@ const uint8_t MODE_PIN = 4;  // HIGH= mirror, LOW = same
 
 // =================== MOTION ====================
 // มอเตอร์ 1.8° -> 200 steps/rev
-const int STEPS_PER_REV = 1400;
+const int STEPS_PER_REV = 1370;
 // ตั้งให้ตรงกับ DIP microstep ของ TB6600 (1,2,4,8,16,32 ...)
 const int MICROSTEP = 2;
 const int STEPS_PER_90 = (STEPS_PER_REV * MICROSTEP) / 4;
@@ -73,8 +73,8 @@ const uint16_t STEP_HIGH_US = 500;  // pulse high width
 const uint16_t STEP_LOW_US = 500;   // pulse low  width
 
 // หน่วงความปลอดภัย
-const uint32_t ENA_SETUP_MS = 100;  // รอหลัง Enable
-const uint16_t DIR_SETUP_US = 100;  // รอหลังสลับทิศ
+const uint32_t ENA_SETUP_MS = 200;  // รอหลัง Enable
+const uint16_t DIR_SETUP_US = 200;  // รอหลังสลับทิศ
 
 // =================== STATE =====================
 // แยกสถานะคำสั่ง: รอทำ (-1/1) กับคำสั่งหยุด (0)
