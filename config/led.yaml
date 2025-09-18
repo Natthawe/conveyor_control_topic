@@ -1,29 +1,29 @@
 led_relay_udp_node:
   ros__parameters:
-    # ============ UDP Target ============
+    # ===== UDP Target =====
     udp_ip: "10.1.100.211"
     udp_port: 8001
 
-    # ============ Topic Names ============
+    # ===== Topic Names =====
     topic_stop: "/stopRobotX"
     topic_status: "/gmr_controllers/status"
     topic_distance: "/closest_object_distance"
 
-    # ============ Distance Logic ============
-    distance_threshold: 1.0       # ถ้า < threshold -> alert_value (เมื่อไม่ติด emergency)
-    alert_value: -1               # ค่าส่งเมื่อระยะ < threshold (edge-down)
-    clear_value: 0                # ค่าส่งเมื่อจาก < threshold กลับขึ้น >=threshold (edge-up)
-    distance_send_clear_on_edge_up: true   # true=ส่ง clear_value ตอน edge-up, false=ไม่ส่ง
+    # ===== Distance Logic =====
+    distance_threshold: 1.0                     # ถ้า < threshold -> alert_value (เมื่อไม่ติด emergency)
+    alert_value: -1                             # ค่าส่งเมื่อระยะ < threshold (edge-down)
+    clear_value: 0                              # ค่าส่งเมื่อจาก < threshold กลับขึ้น >=threshold (edge-up)
+    distance_send_clear_on_edge_up: true        # true=ส่ง clear_value ตอน edge-up, false=ไม่ส่ง
 
-    # ============ Emergency Logic ============
+    # ===== Emergency Logic =====
     suppress_alert_when_emergency_active: true  # true=ถ้ามี 1 ค้างอยู่จะไม่ส่ง alert -1
-    rearm_delay_sec: 2.0               # หน่วงส่ง alert (-1) หลังปลดฉุกเฉินเป็น 0 ขณะยัง <threshold
+    rearm_delay_sec: 2.0                        # หน่วงส่ง alert (-1) หลังปลดฉุกเฉินเป็น 0 ขณะยัง <threshold
 
-    # ============ QoS ============
+    # ===== QoS =====
     qos_depth: 10
-    qos_reliability: "reliable"        # "reliable" หรือ "best_effort"
-    qos_durability: "volatile"         # "volatile" หรือ "transient_local"
+    qos_reliability: "reliable"                 # "reliable" หรือ "best_effort"
+    qos_durability: "volatile"                  # "volatile" หรือ "transient_local"
 
-    # ============ Misc ============
-    dedupe_same_value: true            # กันสแปม: ถ้าจะส่งค่าเท่ากับค่าล่าสุด จะไม่ส่งซ้ำ
-    require_status_before_distance: true # กันบัคตอนเริ่ม ให้รอรับสถานะฉุกเฉินก่อนค่อยพิจารณา distance
+    # ===== Misc =====
+    dedupe_same_value: true                     # กันสแปม: ถ้าจะส่งค่าเท่ากับค่าล่าสุด จะไม่ส่งซ้ำ
+    require_status_before_distance: true        # กันบัคตอนเริ่ม ให้รอรับสถานะฉุกเฉินก่อนค่อยพิจารณา distance
