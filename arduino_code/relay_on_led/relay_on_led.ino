@@ -9,8 +9,8 @@ const uint16_t UDP_PORT_LISTEN = 8001;  // UDP port
 EthernetUDP Udp;
 
 // ===== Relay pins & polarity =====
-const int RELAY1_PIN = 8;
-const int RELAY2_PIN = 9;
+const int RELAY1_PIN = 9;
+const int RELAY2_PIN = 8;
 const bool RELAY_ACTIVE_LOW = true;  // Active-LOW
 
 void relayWrite(int pin, bool on) {

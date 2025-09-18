@@ -1,23 +1,11 @@
-# ack_udp_node:
-#   ros__parameters:
-#     udp_targets:
-#       - "10.1.100.210:8000"
-#       # - "10.1.100.211:8001"
-#     send_ascii: false                     # ส่งเป็นไบต์เดียว Int8 ต้องเป็น false เพื่อใช้ seq/ACK จับคู่ได้
-#     listen_port: 9000                     # พอร์ตฝั่ง ROS สำหรับรับ ACK
-#     ack_timeout_ms: 300                   # timeout ต่อครั้ง
-#     ack_retries: 3                        # retry เมื่อไม่เห็น ACK
-#     require_completed: false               # true = รอจน status=2/3 ก่อนสรุปผล
-#     ack_success_policy: "any"             # "all" ทุกเครื่องต้อง OK หรือ "any" ถ้าต้องการให้ผ่านเมื่อมีเครื่องใดเครื่องหนึ่ง OK
-
 ack_hook_relay_udp_node:
   ros__parameters:
-    udp_targets: ["10.1.100.210:8000"]
-    send_ascii: false
-    listen_port: 9000
-    ack_timeout_ms: 300
-    ack_retries: 3
+    udp_targets: ["10.1.100.210:8000"]  
+    send_ascii: false             # ส่งเป็นไบต์เดียว Int8 ต้องเป็น false เพื่อใช้ seq/ACK จับคู่ได้ 
+    listen_port: 9000             # พอร์ตฝั่ง ROS สำหรับรับ ACK
+    ack_timeout_ms: 300           # timeout ต่อครั้ง
+    ack_retries: 3                # retry เมื่อไม่เห็น ACK
     require_completed: true       # ไม่บังคับรอจนจบ
-    ack_settle_ms: 150             # เปิดหน้าต่างดูด ACK ต่อ (ลอง 150–300ms ตามเน็ต/MCU)
-    ack_success_policy: "any"
-    publish_detail: true           # ถ้าอยากดูข้อความ detail ใน topic /conveyor_ack
+    ack_settle_ms: 150            # เปิดหน้าต่างดูด ACK ต่อ (ลอง 150–300ms ตามเน็ต/MCU)
+    ack_success_policy: "any"     # "all" ทุกเครื่องต้อง OK หรือ "any" ถ้าต้องการให้ผ่านเมื่อมีเครื่องใดเครื่องหนึ่ง OK
+    publish_detail: true          # ถ้าอยากดูข้อความ detail ใน topic /conveyor_ack

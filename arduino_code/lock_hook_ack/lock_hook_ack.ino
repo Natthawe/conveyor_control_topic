@@ -288,6 +288,10 @@ void handleUdp() {
     // ACK: received
     sendAck(seq, 0, c, rip, rport);
 
+    if (c == 0 && !is_moving) {
+    sendAck(seq, 2 /*completed*/, c, rip, rport);
+    }
+
     // คำสั่งรีเลย์เสร็จทันที -> ส่ง completed
     if (c == 2 || c == -2) {
       sendAck(seq, 2 /*completed*/, c, rip, rport);
