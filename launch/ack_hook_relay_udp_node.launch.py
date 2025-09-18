@@ -10,7 +10,7 @@ def generate_launch_description():
     config = os.path.join(
         get_package_share_directory('conveyor_control_topic'),
         'config',
-        'ack_led_hook.yaml'
+        'ack_hook_relay.yaml'
     )
 
     # Check if the config file exists before launching the node
@@ -20,8 +20,8 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='conveyor_control_topic',
-            executable='ack_udp_node',
-            name='ack_udp_node',
+            executable='ack_hook_relay_udp_node',
+            name='ack_hook_relay_udp_node',
             output='screen',
             parameters=[config]
         )

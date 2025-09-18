@@ -73,7 +73,7 @@ int32_t parseCmdFromPacket(int packetSize) {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial) {}
   Serial.println(F("\n=== Nano UDP Relay Controller (Int32) ==="));
   Serial.println(F(" -> -1 = YELLOW\n -> 0 = GREEN\n -> 1 = RED\n -> 2 = BLACK"));
@@ -95,6 +95,8 @@ void setup() {
   } else {
     Serial.println(F("UDP begin() FAILED!"));
   }
+
+  Serial.println("LED STATUS");
 }
 
 void loop() {
