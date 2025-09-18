@@ -35,7 +35,6 @@ const uint8_t M2_EN = 3;
 
 // =================== RELAY ======================
 const uint8_t RELAY_PIN = 5;
-bool relay_armed = false;  // รอ '1' ครั้งที่สองอยู่หรือไม่ ถ้าเป็น true = ได้รับ '1' ครั้งแรกแล้ว
 inline void relay_on() {
   digitalWrite(RELAY_PIN, HIGH);
 }
@@ -138,7 +137,8 @@ void applyRelayCommand(int8_t cmd) {
   } else if (cmd == 0) {
     // Abort + ปิด Relay
     abort_requested = true;
-    relay_off();
+    // relay_off();
+    ALL_OFF_LED();
     Serial.println("Abort requested (cmd=0) + Relay OFF");
   }
 }
@@ -340,6 +340,16 @@ void rotate90_once(int8_t dirCmd) {
 
   is_moving = false;
   setEnableBoth(false);
+}
+
+void ALL_OFF_LED(){
+  digitalWrite(M1_STEP, LOW);
+  digitalWrite(M1_DIR, LOW);
+  digitalWrite(M1_EN, LOW);
+  digitalWrite(M2_STEP, LOW);
+  digitalWrite(M2_EN, LOW);
+  digitalWrite(M1_STEP, LOW);
+  digitalWrite(RELAY_PIN, LOW);
 }
 
 void setup() {
