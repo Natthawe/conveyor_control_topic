@@ -22,13 +22,14 @@ setup(
     maintainer_email='natthawejumjai@gmail.com',
     description='Conveyor control via UDP using ROS 2 Topic',
     license='Apache-2.0',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'conveyor_udp_node = conveyor_control_topic.conveyor_udp_node:main',
             'led_hook_udp_node = conveyor_control_topic.led_hook_udp_node:main',
             'led_relay_udp_node = conveyor_control_topic.led_relay_udp_node:main',
             'ack_hook_relay_udp_node = conveyor_control_topic.ack_hook_relay_udp_node:main',
+            'status_conveyor_udp_node = conveyor_control_topic.status_conveyor_udp_node:main',
+            'nano_tray_udp_node = conveyor_control_topic.nano_tray_udp_node:main',
         ],
     },
 )

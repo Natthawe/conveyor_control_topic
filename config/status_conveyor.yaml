@@ -1,0 +1,21 @@
+status_conveyor_udp_parameters:
+  ros__parameters:
+    # ====== UDP Communication Settings ======
+    udp_ip: "10.1.100.222"      # IP ของบอร์ด Nano
+    udp_port: 30001             # พอร์ตปลายทางของ Nano (ใช้รับคำสั่ง)
+    listen_port: 30002          # พอร์ตของ ROS สำหรับรับสถานะกลับจาก Nano
+
+    # ====== Topic Settings ======
+    conveyor_state_topic: "/conveyor_state"     # รับคำสั่งหมุนซ้าย/ขวา/หยุด
+    sensor_topic: "/conveyor/sensor"            # ส่งสถานะ [Left, Right]
+    sensor_left_topic: "/conveyor/sensor_left"  # ส่งสถานะเซนเซอร์ฝั่งซ้าย (0/1)
+    sensor_right_topic: "/conveyor/sensor_right" # ส่งสถานะเซนเซอร์ฝั่งขวา (0/1)
+    motor_dir_topic: "/conveyor/motor_dir"      # ส่งทิศทางมอเตอร์ (-1/0/1) หมุนไปทางซ้ายมองจากหน้าหุ่น/หยุด/ขวา
+
+    # ====== Update ======
+    status_publish_rate: 10.0       # Hz
+    timeout_ms: 5000                # ms
+
+    # ====== Logging Level ======
+    log_level: "info"               # debug / info / warn / error
+
