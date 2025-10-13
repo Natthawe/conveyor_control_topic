@@ -1,0 +1,12 @@
+nao_tray_udp_parameters:
+  ros__parameters:
+    # ====== UDP Communication Settings ======
+    udp_cmd_ip: "10.1.100.222"          # IP ของบอร์ด Nano
+    udp_cmd_port: 30001                 # พอร์ตปลายทางของ Nano (ใช้รับคำสั่ง)
+    status_listen_port: 30002           # พอร์ตของ ROS สำหรับรับสถานะกลับจาก Nano
+
+    # ====== Topic Settings ======
+    status_topic: "/tray_status"
+    cmd_topic: "/tray_cmd"
+
+

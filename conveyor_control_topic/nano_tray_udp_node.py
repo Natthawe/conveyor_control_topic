@@ -14,26 +14,27 @@ STATUS_MAP = {
     5: "ERROR",
 }
 
+
 class TrayBridgeNode(Node):
     def __init__(self):
         super().__init__('tray_bridge')
 
         # ----- Parameters -----
-        self.declare_parameter('udp_cmd_ip',   '10.1.100.222')  # Nano IP
+        self.declare_parameter('udp_cmd_ip', '10.1.100.222')  # Nano IP
         self.declare_parameter('udp_cmd_port', 30001)           # Nano cmd port
         self.declare_parameter('status_listen_port', 30002)     # local port to receive status
         self.declare_parameter('status_topic', '/tray_status')
-        self.declare_parameter('cmd_topic',    '/tray_cmd')
+        self.declare_parameter('cmd_topic', '/tray_cmd')
 
-        self.udp_cmd_ip   = self.get_parameter('udp_cmd_ip').get_parameter_value().string_value
+        self.udp_cmd_ip = self.get_parameter('udp_cmd_ip').get_parameter_value().string_value
         self.udp_cmd_port = int(self.get_parameter('udp_cmd_port').value)
-        self.status_port  = int(self.get_parameter('status_listen_port').value)
-        status_topic      = self.get_parameter('status_topic').get_parameter_value().string_value
-        cmd_topic         = self.get_parameter('cmd_topic').get_parameter_value().string_value
+        self.status_port = int(self.get_parameter('status_listen_port').value)
+        status_topic = self.get_parameter('status_topic').get_parameter_value().string_value
+        cmd_topic = self.get_parameter('cmd_topic').get_parameter_value().string_value
 
         # ----- ROS pubs/subs -----
         self.pub_status = self.create_publisher(Int32, status_topic, 10)
-        self.sub_cmd    = self.create_subscription(Int32, cmd_topic, self.cmd_cb, 10)
+        self.sub_cmd = self.create_subscription(Int32, cmd_topic, self.cmd_cb, 10)
 
         # ----- UDP sockets -----
         # Sender (commands -> Nano)
@@ -88,12 +89,14 @@ class TrayBridgeNode(Node):
             except ValueError:
                 self.get_logger().warn(f'Non-int status payload: "{txt}" from {addr}')
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = TrayBridgeNode()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
