@@ -1,0 +1,36 @@
+nano_control_relay_parameters:
+  ros__parameters:
+    # ===== Nano target =====
+    udp_ip: "10.1.100.222"                        # IP บอร์ด TUG NANO
+    udp_port: 30010                               # Port บอร์ด TUG NANO
+
+    # ===== PC LAN (listen/bind only this interface) =====
+    listen_ip: "10.1.100.100"                     # IP เครื่อง PC ที่เชื่อมต่อกับบอร์ด TUG NANO
+    listen_port: 30011                            # Port ที่ใช้ฟังสถานะจากบอร์ด TUG NANO
+
+    # ===== Topics =====
+    topic_stop: "/stopRobotX"                     # Topic ฉุกเฉิน
+    topic_status: "/gmr_controllers/status"       # Topic สถานะฉุกเฉิน
+    topic_distance: "/closest_object_distance"    # Topic ระยะห่างวัตถุ
+
+    # ===== Distance Logic =====
+    distance_threshold: 1.0                       # ถ้า < threshold -> alert_value
+    alert_value: -1                               # ค่าส่งเมื่อระยะ < threshold (edge-down)
+    clear_value: 0                                # ค่าส่งเมื่อจาก < threshold กลับขึ้น >=threshold (edge-up)
+    distance_send_clear_on_edge_up: true          # true=ส่ง clear_value ตอน edge-up, false=ไม่ส่ง
+
+    # ===== Emergency Logic =====
+    suppress_alert_when_emergency_active: true    # true=ถ้ามีสถานะฉุกเฉินเป็น 1 ค้างอยู่จะไม่ส่ง alert -1
+    rearm_delay_sec: 2.0                          # หน่วงส่ง alert (-1) หลังปลดฉุกเฉินเป็น 0 ขณะยัง <threshold
+
+    # ===== QoS =====
+    qos_depth: 10                                 # QoS
+    qos_reliability: "reliable"                   # "reliable" หรือ "best_effort"
+    qos_durability: "volatile"                    # "volatile" หรือ "transient_local"
+
+    # ===== Misc =====
+    dedupe_same_value: true                       # กันสแปม: ถ้าจะส่งค่าเท่ากับค่าล่าสุด จะไม่ส่งซ้ำ
+    require_status_before_distance: true          # กันบัคตอนเริ่ม ให้รอรับสถานะฉุกเฉินก่อนค่อยพิจารณา distance
+
+    # ===== UDP poll =====
+    poll_hz: 100.0                                # ความถี่ในการเช็คสถานะจากบอร์ด TUG NANO
