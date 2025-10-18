@@ -47,7 +47,7 @@ uint16_t lastRelPort = 0;
 // =========================
 // Timing / Debounce / HB
 // =========================
-const unsigned long HB_PERIOD_MS = 500;
+const unsigned long HB_PERIOD_MS = 100;
 const unsigned long SENSOR_DEBOUNCE_MS = 20;
 unsigned long lastHBms = 0;
 unsigned long lastChangeL = 0, lastChangeR = 0;

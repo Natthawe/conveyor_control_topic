@@ -10,7 +10,7 @@ def generate_launch_description():
     config = os.path.join(
         get_package_share_directory('conveyor_control_topic'),
         'config',
-        'nano_tray.yaml'
+        'tug_conveyor_sensor.yaml'
     )
 
     # Check if the config file exists before launching the node
@@ -20,8 +20,8 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='conveyor_control_topic',
-            executable='nano_conveyor_relay_bridge_node',
-            name='nano_conveyor_relay_bridge_parameters',
+            executable='tug_nano_conveyor_sensor_node',
+            name='nano_conveyor_sensor_parameters',
             output='screen',
             parameters=[config]
         )

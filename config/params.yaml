@@ -1,9 +1,0 @@
-conveyor_bridge:
-  ros__parameters:
-    target_ip: '10.1.100.222'
-    port_conveyor_rx: 30001
-    port_relay_rx: 30002
-    port_conveyor_ack: 31001
-    port_relay_ack: 31002
-    use_binary_relay: True
-    bind_ip: '0.0.0.0'

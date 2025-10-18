@@ -1,0 +1,19 @@
+nano_conveyor_sensor_parameters:
+  ros__parameters:
+    cmd_ip: "10.1.100.222"                  # TUG NANO
+    cmd_port: 30001                         # Ports SEND cmd to conveyor
+
+    listen_ip: "10.1.100.100"               # PC LAN
+    listen_port: 30002                      # Ports LISTEN status from conveyor
+
+    topic_cmd: "/conveyor_state"            # Topic คำสั่ง conveyor
+    topic_ack: "/conveyor_ack"              # Topic ack จาก conveyor
+    topic_sensors: "/conveyor/sensors"      # Topic สถานะเซ็นเซอร์ conveyor
+    topic_motor: "/conveyor/motor_dir"      # Topic สถานะมอเตอร์ conveyor
+
+    qos_depth: 10                           # QoS
+    qos_reliability: "reliable"             # "reliable" หรือ "best_effort"
+    qos_durability: "volatile"              # "volatile" หรือ "transient_local"
+
+    poll_hz: 100.0                          # frequency check status from TUG NANO
+    send_ascii: true                        # true=ส่งเป็น ASCII, false=ส่งเป็น binary
