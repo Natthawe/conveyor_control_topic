@@ -1,0 +1,12 @@
+nano_conveyor_relay_bridge_parameters:
+  ros__parameters:
+    # ====== UDP Communication Settings ======
+    device_ip: '10.1.100.222'           # ที่อยู่ IP ของ Nano ที่เชื่อมต่อกับสายพานและรีเลย์
+    bind_ip: '0.0.0.0'                  # ที่อยู่ IP ที่จะผูกไว้สำหรับการสื่อสาร UDP
+    conv_cmd_port: 30001                # พอร์ตส่งคำสั่งสายพานไปที่พอร์ตนี้ของ Nano
+    conv_status_port: 30002             # พอร์ตรับสถานะสายพานกลับจาก Nano
+    relay_cmd_port: 30010               # พอร์ตส่งคำสั่งรีเลย์ไปที่พอร์ตนี้ของ Nano
+    relay_status_port: 30011            # พอร์ตรับสถานะรีเลย์กลับจาก Nano
+    poll_hz: 50.0                       # ความถี่ในการส่ง/รับข้อมูล
+    recv_buf_size: 8192                 # ขนาดบัฟเฟอร์สำหรับรับข้อมูล
+    send_binary: false                  # ส่งข้อมูลเป็นไบนารีหรือไม่

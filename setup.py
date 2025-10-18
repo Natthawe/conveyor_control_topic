@@ -30,6 +30,9 @@ setup(
             'ack_hook_relay_udp_node = conveyor_control_topic.ack_hook_relay_udp_node:main',
             'status_conveyor_udp_node = conveyor_control_topic.status_conveyor_udp_node:main',
             'nano_tray_udp_node = conveyor_control_topic.nano_tray_udp_node:main',
+            'bridge_node = conveyor_control_topic.bridge_node:main',
+            'conveyor_status_node = conveyor_control_topic.conveyor_status_node:main',
+            'nano_conveyor_relay_bridge_node = conveyor_control_topic.nano_conveyor_relay_bridge_node:main',
         ],
     },
 )
