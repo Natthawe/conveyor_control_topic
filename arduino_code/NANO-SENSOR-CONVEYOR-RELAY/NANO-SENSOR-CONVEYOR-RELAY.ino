@@ -5,61 +5,63 @@
 // =========================
 // Config
 // =========================
-byte MAC[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };     // MAC บอร์ด
-IPAddress LOCAL_IP(10, 1, 100, 222);                      // IP ของบอร์ดนี้
-IPAddress ROS2_IP(10, 1, 100, 100);                       // เครื่อง ROS2 ที่รับสถานะ
+byte MAC[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };  // MAC บอร์ด
+IPAddress LOCAL_IP(10, 1, 100, 222);                  // IP ของบอร์ดนี้
+IPAddress ROS2_IP(10, 1, 100, 100);                   // เครื่อง ROS2 ที่รับสถานะ
 
 // พอร์ตสายพาน
 const uint16_t PORT_CONV_LISTEN = 30001;  // รับคำสั่ง
 const uint16_t PORT_CONV_STATUS = 30002;  // ส่งสถานะไป ROS2
 
 // พอร์ตรีเลย์
-const uint16_t PORT_REL_LISTEN  = 30010;  // รับคำสั่ง
-const uint16_t PORT_REL_STATUS  = 30011;  // ส่งสถานะไป ROS2
+const uint16_t PORT_REL_LISTEN = 30010;  // รับคำสั่ง
+const uint16_t PORT_REL_STATUS = 30011;  // ส่งสถานะไป ROS2
 
 // =========================
 // I/O Pins
 // =========================
-#define SENSOR_LEFT_PIN      3
-#define SENSOR_RIGHT_PIN     2
-#define MOTOR_TURN_LEFT_PIN  6
+#define SENSOR_LEFT_PIN 3
+#define SENSOR_RIGHT_PIN 2
+#define MOTOR_TURN_LEFT_PIN 6
 #define MOTOR_TURN_RIGHT_PIN 7
-#define LED_NANO             13
+#define LED_NANO 13
 
 // รีเลย์
-const int  RELAY1_PIN = 9;
-const int  RELAY2_PIN = 8;
+const int RELAY1_PIN = 9;
+const int RELAY2_PIN = 8;
 const bool RELAY_ACTIVE_LOW = true;  // รีเลย์ Active-LOW
 
 // =========================
 // UDP Sockets
 // =========================
-EthernetUDP UdpConvCmd;   // รับคำสั่งสายพาน
-EthernetUDP UdpRelCmd;    // รับคำสั่งรีเลย์
-EthernetUDP UdpTx;        // ใช้ส่งสถานะออก (reuse)
+EthernetUDP UdpConvCmd;  // รับคำสั่งสายพาน
+EthernetUDP UdpRelCmd;   // รับคำสั่งรีเลย์
+EthernetUDP UdpTx;       // ใช้ส่งสถานะออก (reuse)
 
 // จำปลายทางที่สั่งล่าสุด (สำหรับตอบกลับ/ดีบัก)
-IPAddress lastConvIP;  uint16_t lastConvPort = 0;
-IPAddress lastRelIP;   uint16_t lastRelPort  = 0;
+IPAddress lastConvIP;
+uint16_t lastConvPort = 0;
+IPAddress lastRelIP;
+uint16_t lastRelPort = 0;
 
 // =========================
 // Timing / Debounce / HB
 // =========================
-const unsigned long HB_PERIOD_MS       = 500;
+const unsigned long HB_PERIOD_MS = 500;
 const unsigned long SENSOR_DEBOUNCE_MS = 20;
 unsigned long lastHBms = 0;
 unsigned long lastChangeL = 0, lastChangeR = 0;
-int rawL = 0, rawR = 0, stableL = 0, stableR = 0;   // 0/1 (1=มีวัตถุ หลัง map active-low)
+int rawL = 0, rawR = 0, stableL = 0, stableR = 0;  // 0/1 (1=มีวัตถุ หลัง map active-low)
 
 // Motor dir report
-int currentDir = 0;      // -1 left, 0 stop, 1 right
+int currentDir = 0;  // -1 left, 0 stop, 1 right
 int lastReportedDir = 0;
 
 // =========================
 // Relay State
 // =========================
-bool relay1On = false;   // ความหมายหลัง map แล้ว (true=เปิด)
-bool relay2On = false;
+bool relay1 = false;
+bool relay2 = false;
 
 // =========================
 // Conveyor Logic (คงเดิมจากโค้ดแรก)
@@ -83,10 +85,11 @@ bool waitingForItemFromLeft = false;
 bool waitingForItemFromRight = false;
 
 unsigned long moveStartTime = 0;
+unsigned long stateEnterMs = 0;
 const unsigned long TIMEOUT_DURATION = 10000;
 
 unsigned long stopDelayStartTime = 0;
-const unsigned long STOP_DELAY_LEFT  = 3000;
+const unsigned long STOP_DELAY_LEFT = 3000;
 const unsigned long STOP_DELAY_RIGHT = 3000;
 const unsigned long STOP_DELAY_CASE5 = 500;
 bool delayBeforeStop = false;
@@ -104,28 +107,30 @@ bool passingFromRightOnly = false;
 // Utils
 // =========================
 void ethernetInit() {
-  Ethernet.init(10);                 // CS D10
+  Ethernet.init(10);  // CS D10
   Ethernet.begin(MAC, LOCAL_IP);
 }
 
 void pinInit() {
-  pinMode(SENSOR_LEFT_PIN,  INPUT_PULLUP);
+  pinMode(SENSOR_LEFT_PIN, INPUT_PULLUP);
   pinMode(SENSOR_RIGHT_PIN, INPUT_PULLUP);
-  pinMode(MOTOR_TURN_LEFT_PIN,  OUTPUT);
+  pinMode(MOTOR_TURN_LEFT_PIN, OUTPUT);
   pinMode(MOTOR_TURN_RIGHT_PIN, OUTPUT);
   pinMode(LED_NANO, OUTPUT);
 
   pinMode(RELAY1_PIN, OUTPUT);
   pinMode(RELAY2_PIN, OUTPUT);
   // ค่าเริ่มต้นรีเลย์: r1=true, r2=false (ตามโค้ดเดิม)
-  relay1On = true;
-  relay2On = false;
+  relay1 = true;
+  relay2 = false;
 }
 
-void blinkLED(int n=5, int ms=100) {
-  for (int i=0;i<n;i++) {
-    digitalWrite(LED_NANO, HIGH); delay(ms);
-    digitalWrite(LED_NANO, LOW);  delay(ms);
+void blinkLED(int n = 5, int ms = 100) {
+  for (int i = 0; i < n; i++) {
+    digitalWrite(LED_NANO, HIGH);
+    delay(ms);
+    digitalWrite(LED_NANO, LOW);
+    delay(ms);
   }
 }
 
@@ -163,12 +168,12 @@ void resetConveyorState() {
 // =========================
 void relayWrite(int pin, bool on) {
   if (RELAY_ACTIVE_LOW) digitalWrite(pin, on ? LOW : HIGH);
-  else                  digitalWrite(pin, on ? HIGH : LOW);
+  else digitalWrite(pin, on ? HIGH : LOW);
 }
 
 void applyRelayOutputs() {
-  relayWrite(RELAY1_PIN, relay1On);
-  relayWrite(RELAY2_PIN, relay2On);
+  relayWrite(RELAY1_PIN, relay1);
+  relayWrite(RELAY2_PIN, relay2);
 }
 
 // =========================
@@ -201,7 +206,7 @@ void reportSensors() {
   sendConvStatus(line);
 }
 
-void reportMotorIfChanged(bool force=false) {
+void reportMotorIfChanged(bool force = false) {
   if (force || currentDir != lastReportedDir) {
     lastReportedDir = currentDir;
     String line = "M," + String(currentDir);
@@ -211,7 +216,7 @@ void reportMotorIfChanged(bool force=false) {
 
 void reportRelay() {
   // แปลงสถานะเป็น 0/1 หลัง map แล้ว
-  String line = "R," + String(relay1On ? 1 : 0) + "," + String(relay2On ? 1 : 0);
+  String line = "R," + String(relay1 ? 1 : 0) + "," + String(relay2 ? 1 : 0);
   sendRelayStatus(line);
 }
 
@@ -219,61 +224,103 @@ void reportRelay() {
 // Command parsers
 // =========================
 int readIntFromUdp(EthernetUDP& udp, int packetSize, char* buf, size_t buflen) {
-  int n = udp.read((uint8_t*)buf, min(packetSize, (int)buflen-1));
+  int n = udp.read((uint8_t*)buf, min(packetSize, (int)buflen - 1));
   if (n <= 0) return 9999;
   if (n == 4) {
-    int32_t val; memcpy(&val, buf, 4);
+    int32_t val;
+    memcpy(&val, buf, 4);
     return (int)val;
   }
   buf[n] = '\0';
   // trim
-  while (*buf==' '||*buf=='\t') ++buf;
+  while (*buf == ' ' || *buf == '\t') ++buf;
   int len = strlen(buf);
-  while (len>0 && (buf[len-1]=='\r'||buf[len-1]=='\n'||buf[len-1]==' '||buf[len-1]=='\t')) buf[--len]=0;
+  while (len > 0 && (buf[len - 1] == '\r' || buf[len - 1] == '\n' || buf[len - 1] == ' ' || buf[len - 1] == '\t')) buf[--len] = 0;
   return atoi(buf);
 }
 
 void processConveyorCommand(int cmd) {
-  bool sensorLeft  = (digitalRead(SENSOR_LEFT_PIN)  == LOW);
+  bool sensorLeft = (digitalRead(SENSOR_LEFT_PIN) == LOW);
   bool sensorRight = (digitalRead(SENSOR_RIGHT_PIN) == LOW);
 
-  if (cmd == 1) {
-    Serial.println(F("Conv CMD: MOVE_RIGHT"));
+  unsigned long now = millis();
+
+  auto enterMovingRight = [&]() {
     motorRight();
     conveyorState = MOVING_RIGHT;
-    boxFromLeft = true;  boxFromRight = false;
+    boxFromLeft = true;
+    boxFromRight = false;
     passedLeftSensor = false;
     moveStartTime = millis();
-
+    stateEnterMs = moveStartTime;  // << ตั้งเวลาเข้า state
     initialObjectLeft = sensorLeft;
     initialObjectRight = sensorRight;
     waitForClearRight = initialObjectLeft && initialObjectRight;
     waitingForItemFromLeft = (!sensorLeft && !sensorRight);
     passingFromLeftOnly = sensorLeft && !sensorRight;
     reportMotorIfChanged(true);
+  };
 
-  } else if (cmd == -1) {
-    Serial.println(F("Conv CMD: MOVE_LEFT"));
+  auto enterMovingLeft = [&]() {
     motorLeft();
     conveyorState = MOVING_LEFT;
-    boxFromRight = true; boxFromLeft = false;
+    boxFromRight = true;
+    boxFromLeft = false;
     passedRightSensor = false;
     moveStartTime = millis();
-
+    stateEnterMs = moveStartTime;  // << ตั้งเวลาเข้า state
     initialObjectLeft = sensorLeft;
     initialObjectRight = sensorRight;
     waitForClearLeft = initialObjectLeft && initialObjectRight;
     waitingForItemFromRight = (!sensorLeft && !sensorRight);
     passingFromRightOnly = sensorRight && !sensorLeft;
     reportMotorIfChanged(true);
+  };
 
-  } else if (cmd == 0) {
+  if (cmd == 1) {
+    if (conveyorState != MOVING_RIGHT) {
+      Serial.println(F("Conv CMD: MOVE_RIGHT"));
+
+      // (ก่อนตั้ง state) — optional
+      Serial.print(F(" BEFORE now="));
+      Serial.print(millis());
+      Serial.print(F(" stateEnterMs="));
+      Serial.println(stateEnterMs);
+
+      enterMovingRight();  // <-- ตั้ง stateEnterMs ตรงนี้
+
+      // (หลังตั้ง state) — ชัดสุด
+      Serial.print(F(" AFTER  now="));
+      Serial.print(millis());
+      Serial.print(F(" stateEnterMs="));
+      Serial.println(stateEnterMs);
+    }
+  } else if (cmd == -1) {
+    if (conveyorState != MOVING_LEFT) {
+      Serial.println(F("Conv CMD: MOVE_LEFT"));
+
+      Serial.print(F(" BEFORE now="));
+      Serial.print(millis());
+      Serial.print(F(" stateEnterMs="));
+      Serial.println(stateEnterMs);
+
+      enterMovingLeft();
+
+      Serial.print(F(" AFTER  now="));
+      Serial.print(millis());
+      Serial.print(F(" stateEnterMs="));
+      Serial.println(stateEnterMs);
+    }
+  }
+
+
+  else if (cmd == 0) {
     Serial.println(F("Conv CMD: STOP"));
     resetConveyorState();
     reportMotorIfChanged(true);
-
   } else {
-    Serial.print(F("Conv Unknown CMD: ")); Serial.println(cmd);
+    Serial.print(F("Conv Unknown CMD: "));
+    Serial.println(cmd);
   }
 }
 
@@ -284,11 +331,30 @@ void processRelayCommand(int32_t cmd) {
   //  0 -> GREEN   : R1=OFF, R2=ON
   //  2 -> BLACK   : R1=OFF, R2=OFF
   switch (cmd) {
-    case 1:   relay1On = true;  relay2On = false; Serial.println(F("Rel CMD 1: RED"));    break;
-    case -1:  relay1On = true;  relay2On = true;  Serial.println(F("Rel CMD -1: YELLOW")); break;
-    case 0:   relay1On = false; relay2On = true;  Serial.println(F("Rel CMD 0: GREEN"));   break;
-    case 2:   relay1On = false; relay2On = false; Serial.println(F("Rel CMD 2: BLACK"));   break;
-    default:  Serial.print(F("Rel Unknown CMD: ")); Serial.println(cmd); return;
+    case 1:
+      relay1 = false;
+      relay2 = true;
+      Serial.println(F("Rel CMD 1: RED"));
+      break;
+    case -1:
+      relay1 = false;
+      relay2 = false;
+      Serial.println(F("Rel CMD -1: YELLOW"));
+      break;
+    case 0:
+      relay1 = true;
+      relay2 = false;
+      Serial.println(F("Rel CMD 0: GREEN"));
+      break;
+    case 2:
+      relay1 = true;
+      relay2 = true;
+      Serial.println(F("Rel CMD 2: BLACK"));
+      break;
+    default:
+      Serial.print(F("Rel Unknown CMD: "));
+      Serial.println(cmd);
+      return;
   }
   applyRelayOutputs();
   reportRelay();
@@ -307,6 +373,10 @@ void setup() {
   ethernetInit();
   delay(250);
 
+  if (!UdpTx.begin(31000)) {
+    Serial.println(F("ERROR: UdpTx.begin() failed"));
+  }
+
   // เปิดพอร์ต UDP
   bool ok1 = UdpConvCmd.begin(PORT_CONV_LISTEN);
   bool ok2 = UdpRelCmd.begin(PORT_REL_LISTEN);
@@ -314,16 +384,22 @@ void setup() {
     Serial.println(F("ERROR: UDP begin() failed on one of the ports!"));
   }
 
-  Serial.print(F("IP address: ")); Serial.println(Ethernet.localIP());
-  Serial.print(F("Listening CONVEYOR CMD @ ")); Serial.println(PORT_CONV_LISTEN);
-  Serial.print(F("Listening RELAY CMD    @ ")); Serial.println(PORT_REL_LISTEN);
+  Serial.print(F("IP address: "));
+  Serial.println(Ethernet.localIP());
+  Serial.print(F("ROS2_IP target: "));
+  Serial.println(ROS2_IP);
+  Serial.print(F("Listening CONVEYOR CMD @ "));
+  Serial.println(PORT_CONV_LISTEN);
+  Serial.print(F("Listening RELAY CMD    @ "));
+  Serial.println(PORT_REL_LISTEN);
   Serial.println(F("CONVEYOR status  -> ROS2 @ 30002 (S,L,R / M,dir)"));
   Serial.println(F("RELAY status     -> ROS2 @ 30011 (R,r1,r2)"));
 
   // init sensor stable values (active-low map → 1=มีของ)
-  rawL = (digitalRead(SENSOR_LEFT_PIN)  == LOW) ? 1 : 0;
+  rawL = (digitalRead(SENSOR_LEFT_PIN) == LOW) ? 1 : 0;
   rawR = (digitalRead(SENSOR_RIGHT_PIN) == LOW) ? 1 : 0;
-  stableL = rawL; stableR = rawR;
+  stableL = rawL;
+  stableR = rawR;
 
   // ตั้งเอาต์พุตรีเลย์ตามสถานะเริ่มต้น
   applyRelayOutputs();
@@ -332,11 +408,14 @@ void setup() {
   reportSensors();
   reportMotorIfChanged(true);
   reportRelay();
+
+  sendUDP(ROS2_IP, PORT_CONV_STATUS, "HELLO_CONV");
+  sendUDP(ROS2_IP, PORT_REL_STATUS, "HELLO_RELAY");
 }
 
 void loop() {
   unsigned long now = millis();
-
+  const unsigned long TIMEOUT_GRACE_MS = 100;
   // -------------------------
   // รับคำสั่ง "สายพาน"
   // -------------------------
@@ -344,10 +423,11 @@ void loop() {
   if (szC > 0) {
     char buf[64];
     int cmd = readIntFromUdp(UdpConvCmd, szC, buf, sizeof(buf));
-    Serial.print(F("Conv UDP cmd: ")); Serial.println(cmd);
+    Serial.print(F("Conv UDP cmd: "));
+    Serial.println(cmd);
     processConveyorCommand(cmd);
 
-    lastConvIP   = UdpConvCmd.remoteIP();
+    lastConvIP = UdpConvCmd.remoteIP();
     lastConvPort = UdpConvCmd.remotePort();
 
     // ACK กลับไปยังผู้สั่ง (ดีบัก)
@@ -362,10 +442,11 @@ void loop() {
   if (szR > 0) {
     char buf[64];
     int cmd = readIntFromUdp(UdpRelCmd, szR, buf, sizeof(buf));
-    Serial.print(F("Rel UDP cmd: ")); Serial.println(cmd);
+    Serial.print(F("Rel UDP cmd: "));
+    Serial.println(cmd);
     processRelayCommand((int32_t)cmd);
 
-    lastRelIP   = UdpRelCmd.remoteIP();
+    lastRelIP = UdpRelCmd.remoteIP();
     lastRelPort = UdpRelCmd.remotePort();
 
     // ACK (หากอยากตอบกลับผู้ส่ง)
@@ -399,15 +480,27 @@ void loop() {
   // -------------------------
   // อ่านเซนเซอร์ + debounce
   // -------------------------
-  int vL = (digitalRead(SENSOR_LEFT_PIN)  == LOW) ? 1 : 0;
+  int vL = (digitalRead(SENSOR_LEFT_PIN) == LOW) ? 1 : 0;
   int vR = (digitalRead(SENSOR_RIGHT_PIN) == LOW) ? 1 : 0;
 
-  if (vL != rawL) { rawL = vL; lastChangeL = now; }
-  if (vR != rawR) { rawR = vR; lastChangeR = now; }
+  if (vL != rawL) {
+    rawL = vL;
+    lastChangeL = now;
+  }
+  if (vR != rawR) {
+    rawR = vR;
+    lastChangeR = now;
+  }
 
   bool changed = false;
-  if (rawL != stableL && (now - lastChangeL) >= SENSOR_DEBOUNCE_MS) { stableL = rawL; changed = true; }
-  if (rawR != stableR && (now - lastChangeR) >= SENSOR_DEBOUNCE_MS) { stableR = rawR; changed = true; }
+  if (rawL != stableL && (now - lastChangeL) >= SENSOR_DEBOUNCE_MS) {
+    stableL = rawL;
+    changed = true;
+  }
+  if (rawR != stableR && (now - lastChangeR) >= SENSOR_DEBOUNCE_MS) {
+    stableR = rawR;
+    changed = true;
+  }
   if (changed) reportSensors();
 
   // -------------------------
@@ -418,77 +511,114 @@ void loop() {
       break;
 
     case MOVING_RIGHT:
-      if (now - moveStartTime > TIMEOUT_DURATION && !passedLeftSensor) {
-        Serial.println(F("[Case0] Timeout (LEFT sensor not triggered)"));
-        resetConveyorState(); reportMotorIfChanged(true);
-        break;
-      }
-      if (stableL && !passedLeftSensor) {
-        Serial.println(F("Passed sensorLeft"));
-        passedLeftSensor = true;
-      }
-      if (waitingForItemFromLeft && passedLeftSensor && stableR) {
-        Serial.println(F("[Case1] Box moved from LEFT to RIGHT"));
-        stopDelayStartTime = now; delayBeforeStop = true; conveyorState = STOP_CASE5; passingFromLeftOnly = false;
-        break;
-      }
-      if (waitForClearRight && passedLeftSensor && !stableL && !stableR) {
-        Serial.println(F("[Case3] Both sensors cleared after MOVE_RIGHT"));
-        stopDelayStartTime = now; delayBeforeStop = true; conveyorState = RETURNING_RIGHT;
-        break;
-      }
-      if (passingFromLeftOnly && stableR) {
-        Serial.println(F("[Case5] Left->RIGHT -> Stop"));
-        stopDelayStartTime = now; delayBeforeStop = true; conveyorState = STOP_CASE5; passingFromLeftOnly = false;
-        break;
+      {
+        // กันกรณี millis() wrap-around
+        if (now < stateEnterMs) stateEnterMs = now;
+
+        // เช็ค timeout เฉพาะหลังผ่านช่วงตั้งต้น
+        if ((uint32_t)(now - stateEnterMs) >= TIMEOUT_GRACE_MS) {
+          if ((uint32_t)(now - stateEnterMs) > TIMEOUT_DURATION && !passedLeftSensor) {
+            Serial.println(F("[Case0] Timeout (LEFT sensor not triggered)"));
+            resetConveyorState();
+            reportMotorIfChanged(true);
+            break;
+          }
+        }
+
+        if (stableL && !passedLeftSensor) {
+          Serial.println(F("Passed sensorLeft"));
+          passedLeftSensor = true;
+        }
+        if (waitingForItemFromLeft && passedLeftSensor && stableR) {
+          Serial.println(F("[Case1] Box moved from LEFT to RIGHT"));
+          stopDelayStartTime = now;
+          delayBeforeStop = true;
+          conveyorState = STOP_CASE5;
+          passingFromLeftOnly = false;
+          break;
+        }
+        if (waitForClearRight && passedLeftSensor && !stableL && !stableR) {
+          Serial.println(F("[Case3] Both sensors cleared after MOVE_RIGHT"));
+          stopDelayStartTime = now;
+          delayBeforeStop = true;
+          conveyorState = RETURNING_RIGHT;
+          break;
+        }
+        if (passingFromLeftOnly && stableR) {
+          Serial.println(F("[Case5] Left->RIGHT -> Stop"));
+          stopDelayStartTime = now;
+          delayBeforeStop = true;
+          conveyorState = STOP_CASE5;
+          passingFromLeftOnly = false;
+          break;
+        }
       }
       break;
 
     case MOVING_LEFT:
-      if (now - moveStartTime > TIMEOUT_DURATION && !passedRightSensor) {
-        Serial.println(F("[Case0] Timeout (RIGHT sensor not triggered)"));
-        resetConveyorState(); reportMotorIfChanged(true);
-        break;
-      }
-      if (stableR && !passedRightSensor) {
-        Serial.println(F("Passed sensorRight"));
-        passedRightSensor = true;
-      }
-      if (waitingForItemFromRight && passedRightSensor && stableL) {
-        Serial.println(F("[Case2] Box moved from RIGHT to LEFT"));
-        stopDelayStartTime = now; delayBeforeStop = true; conveyorState = STOP_CASE5; passingFromRightOnly = false;
-        break;
-      }
-      if (waitForClearLeft && passedRightSensor && !stableR && !stableL) {
-        Serial.println(F("[Case4] Both sensors cleared after MOVE_LEFT"));
-        stopDelayStartTime = now; delayBeforeStop = true; conveyorState = RETURNING_LEFT;
-        break;
-      }
-      if (passingFromRightOnly && stableL) {
-        Serial.println(F("[Case5] Right->LEFT -> Stop"));
-        stopDelayStartTime = now; delayBeforeStop = true; conveyorState = STOP_CASE5; passingFromRightOnly = false;
-        break;
+      {
+        if (now < stateEnterMs) stateEnterMs = now;
+
+        if ((uint32_t)(now - stateEnterMs) >= TIMEOUT_GRACE_MS) {
+          if ((uint32_t)(now - stateEnterMs) > TIMEOUT_DURATION && !passedRightSensor) {
+            Serial.println(F("[Case0] Timeout (RIGHT sensor not triggered)"));
+            resetConveyorState();
+            reportMotorIfChanged(true);
+            break;
+          }
+        }
+
+        if (stableR && !passedRightSensor) {
+          Serial.println(F("Passed sensorRight"));
+          passedRightSensor = true;
+        }
+        if (waitingForItemFromRight && passedRightSensor && stableL) {
+          Serial.println(F("[Case2] Box moved from RIGHT to LEFT"));
+          stopDelayStartTime = now;
+          delayBeforeStop = true;
+          conveyorState = STOP_CASE5;
+          passingFromRightOnly = false;
+          break;
+        }
+        if (waitForClearLeft && passedRightSensor && !stableR && !stableL) {
+          Serial.println(F("[Case4] Both sensors cleared after MOVE_LEFT"));
+          stopDelayStartTime = now;
+          delayBeforeStop = true;
+          conveyorState = RETURNING_LEFT;
+          break;
+        }
+        if (passingFromRightOnly && stableL) {
+          Serial.println(F("[Case5] Right->LEFT -> Stop"));
+          stopDelayStartTime = now;
+          delayBeforeStop = true;
+          conveyorState = STOP_CASE5;
+          passingFromRightOnly = false;
+          break;
+        }
       }
       break;
 
     case RETURNING_RIGHT:
       if (now - stopDelayStartTime >= STOP_DELAY_RIGHT) {
         Serial.println(F("Stopping after delay (RIGHT)"));
-        resetConveyorState(); reportMotorIfChanged(true);
+        resetConveyorState();
+        reportMotorIfChanged(true);
       }
       break;
 
     case RETURNING_LEFT:
       if (now - stopDelayStartTime >= STOP_DELAY_LEFT) {
         Serial.println(F("Stopping after delay (LEFT)"));
-        resetConveyorState(); reportMotorIfChanged(true);
+        resetConveyorState();
+        reportMotorIfChanged(true);
       }
       break;
 
     case STOP_CASE5:
       if (now - stopDelayStartTime >= STOP_DELAY_CASE5) {
         Serial.println(F("Stopping after delay"));
-        resetConveyorState(); reportMotorIfChanged(true);
+        resetConveyorState();
+        reportMotorIfChanged(true);
       }
       break;
   }
@@ -499,7 +629,7 @@ void loop() {
   if (now - lastHBms >= HB_PERIOD_MS) {
     lastHBms = now;
     reportSensors();
-    reportMotorIfChanged(); // ส่งเฉพาะตอนเปลี่ยน (เว้นแต่ว่า force=true ตอนเรียก)
+    reportMotorIfChanged();  // ส่งเฉพาะตอนเปลี่ยน (เว้นแต่ว่า force=true ตอนเรียก)
     reportRelay();
   }
 
